@@ -118,6 +118,13 @@ public class ClassComplexityAssertionsMetricsCalculator {
 		result.setStdClassComplexityAssertions((TCCA != 0)?STD:0);
 		result.setEntropyClassComplexityAssertions((TCCA != 0)?ENT:0);
 
+//		totalWitnessedClassComplexity = 0; 
+//		meanWitnessedClassComplexity = 0;
+//		maxWitnessedClassComplexity = 0; 
+//		minWitnessedClassComplexity = 0; 
+//		stdWitnessedClassComplexity = 0.0; 
+//		entropyWitnessedClassComplexity =0.0; 
+
 		double TWCCA = 0; 
 		double MAX_WCCA = Double.MIN_VALUE; 
 		double MIN_WCCA = Double.MAX_VALUE; 

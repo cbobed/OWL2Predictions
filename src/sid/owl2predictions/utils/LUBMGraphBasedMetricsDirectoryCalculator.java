@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// File: LUBMOntologyMergerDirectoryProc .java 
+// File: LUBMGraphBasedMetricsDirectoryCalculator .java 
 // Author: Carlos Bobed
 // Date: September 2016
 // Version: 0.01
-// Comments:  
+// Comments: Obtains the graph-based metrics for all the LUBM ontologies in a given 
+// 			directory  
 // Modifications: 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -15,10 +16,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
-import org.semanticweb.owlapi.util.OWLOntologyMerger;
 
 import sid.owl2predictions.ClassAssertionsMetrics;
 import sid.owl2predictions.ClassAssertionsMetricsCalculator;
@@ -39,56 +38,50 @@ public class LUBMGraphBasedMetricsDirectoryCalculator {
 		if (directory.isDirectory()) {
 			File metricResults = new File(directory.toString()+File.separator+args[2]);
 			try (PrintWriter outResults = new PrintWriter(metricResults)) {
-				printHeader(outResults); 	
-				ArrayList<String> wrongProcessedFiles = new ArrayList<>();
-				for (int i=0; i<maxNumberUniversities; i++) {
-					System.out.println("Processing "+i+" universities ..."); 
-					OWLOntologyManager om = OWLManager.createOWLOntologyManager(); 
-					OWLOntology currentOntology = om.loadOntology(IRI.create(LUBM_URL));
-					OWLOntologyMerger merger = null; 
+				printHeader(outResults); 		
+				for (int i=0; i<maxNumberUniversities; i++) {					
+					// first, we get all the university filenames we have to include 
+					// in the execution
+					File[] ontologyList = directory.listFiles(new UniversityFileFilter(i));
+					OWLOntologyManager om = null;
+					OWLOntology currentOntology = null; 			
+					ArrayList<File> wrongProcessedFiles = new ArrayList<>();
+					
 					SubGraphMetrics sgMetrics = null;
-					SubGraphMetricsCalculator sgCalculator = null;
-					OWLOntology mergedOntology = null; 
-					// we have to include all the universities up to i
-					for (int j=0; j<=i; j++) {
-						// first, we get all the university filenames we have to include 
-						// in the execution
-						File[] universityList = directory.listFiles(new UniversityFileFilter(j));
-						try {
-							for (File currentUniversityFile: universityList) {
-								System.out.println("--> Loading "+currentUniversityFile); 
-								om.loadOntologyFromOntologyDocument(currentUniversityFile);
+					SubGraphMetricsCalculator sgCalculator = null; 
+					
+						for (File currentOntologyFile: ontologyList) {
+							try {
+								om = OWLManager.createOWLOntologyManager(); 
+								currentOntology = om.loadOntologyFromOntologyDocument(currentOntologyFile);
+								outResults.print(currentOntologyFile.getName()+"\t"); 
+								
+								sgCalculator = new SubGraphMetricsCalculator(currentOntology); 
+								sgMetrics = sgCalculator.calculateMetrics(); 
+								outResults.println(sgMetrics.toString());
+							
+								outResults.flush(); 
+							}
+							catch (Exception e) {
+								wrongProcessedFiles.add(currentOntologyFile); 
 							}
 						}
-						catch(Exception e) {
-							wrongProcessedFiles.add(LUBM_URL.replace(".owl","")+"-"+i+".owl"); 
-						}
+						
+						File resultStats = new File(directory.toString()+File.separator+"resultGraphBasedErrors.csv"); 
+						if (!wrongProcessedFiles.isEmpty()) {
+							try (PrintWriter out = new PrintWriter(resultStats)) {
+								out.println("There were "+wrongProcessedFiles.size()+" ontologies which were wrong processed"); 
+								for (File f: wrongProcessedFiles) {
+									out.println(f.toString()); 
+								}
+								out.flush();
+							}
+							catch (Exception e) {
+								e.printStackTrace(); 
+							}
+						}		
 					}
-					// at this point om has all the ontologies parsed and read
-					merger = new OWLOntologyMerger(om); 
-					mergedOntology = merger.createMergedOntology(om, IRI.create(LUBM_URL.replace(".owl", "")+"-"+i+".owl"));
-					System.out.println(mergedOntology.getAxiomCount()+" axioms in the merged ontology"); 
-					outResults.print(LUBM_URL.replace(".owl","")+"-"+i+".owl\t"); 
-					sgCalculator = new SubGraphMetricsCalculator(mergedOntology); 
-					sgMetrics = sgCalculator.calculateMetrics(); 
-					outResults.println(sgMetrics.toString()); 						
-					outResults.flush(); 
-					System.gc();																				
 				}
-				File resultStats = new File(directory.toString()+File.separator+"resultGraphBasedErrors.csv"); 
-				if (!wrongProcessedFiles.isEmpty()) {
-					try (PrintWriter out = new PrintWriter(resultStats)) {
-						out.println("There were "+wrongProcessedFiles.size()+" ontologies which were wrong processed"); 
-						for (String f: wrongProcessedFiles) {
-							out.println(f.toString()); 
-						}
-						out.flush();
-					}
-					catch (Exception e) {
-						e.printStackTrace(); 
-					}
-				}	
-			}
 			catch (Exception e) {
 				System.out.println("Problems with the metricsResults file"); 
 				System.exit(-1);

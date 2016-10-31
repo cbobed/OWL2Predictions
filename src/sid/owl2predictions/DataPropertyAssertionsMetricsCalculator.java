@@ -3,8 +3,7 @@
 // Author: Carlos Bobed
 // Date: September 2016
 // Version: 0.01
-// Comments: Class which calculates the set-based metrics about dataProperty 
-// assertions 
+// Comments: Class which calculates the metrics about dataProperty assertions 
 // Modifications: 
 ///////////////////////////////////////////////////////////////////////////////
 

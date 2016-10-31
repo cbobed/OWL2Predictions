@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// File: LUBMSetBasedMetricsDirectoryCalculator .java 
+// File: SetBasedMetricsDirectoryCalculator .java 
 // Author: Carlos Bobed
 // Date: September 2016
 // Version: 0.01
@@ -16,10 +16,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
-import org.semanticweb.owlapi.util.OWLOntologyMerger;
 
 import sid.owl2predictions.ClassAssertionsMetrics;
 import sid.owl2predictions.ClassAssertionsMetricsCalculator;
@@ -27,88 +25,70 @@ import sid.owl2predictions.DataPropertyAssertionsMetrics;
 import sid.owl2predictions.DataPropertyAssertionsMetricsCalculator;
 import sid.owl2predictions.ObjectPropertyAssertionsMetrics;
 import sid.owl2predictions.ObjectPropertyAssertionsMetricsCalculator;
-import sid.owl2predictions.SubGraphMetrics;
-import sid.owl2predictions.SubGraphMetricsCalculator;
-import sid.owl2predictions.utils.LUBMGraphBasedMetricsDirectoryCalculator.UniversityFileFilter;
 
 public class LUBMSetBasedMetricsDirectoryCalculator {
 
 	public static void main(String[] args) {
 		File directory = new File(args[0]);
-		int maxNumberUniversities = Integer.valueOf(args[1]); 
-		String LUBM_URL = "http://swat.cse.lehigh.edu/onto/univ-bench.owl"; 
-		
 		if (directory.isDirectory()) {
-			File metricResults = new File(directory.toString()+File.separator+args[2]);
+			// we assume that every single file ending in .owl that is in the directory is an ontology 
+			// to be chopped 
+			File[] ontologyList = directory.listFiles(new OWLFileFilter());
+			OWLOntologyManager om = null;
+			OWLOntology currentOntology = null; 			
+			ArrayList<File> wrongProcessedFiles = new ArrayList<>();
+			
+			ClassAssertionsMetrics caMetrics = null; 
+			ObjectPropertyAssertionsMetrics opaMetrics = null;
+			DataPropertyAssertionsMetrics dpaMetrics = null;
+			
+			ClassAssertionsMetricsCalculator caCalculator = null;  
+			ObjectPropertyAssertionsMetricsCalculator opaCalculator = null; 
+			DataPropertyAssertionsMetricsCalculator dpaCalculator = null;
+			
+			File metricResults = new File(directory.toString()+File.separator+args[1]); 
 			
 			try (PrintWriter outResults = new PrintWriter(metricResults)) {
-				printHeader(outResults); 	
-				ArrayList<String> wrongProcessedFiles = new ArrayList<>();
-				for (int i=0; i<maxNumberUniversities; i++) {
-					System.out.println("Processing "+i+" universities ..."); 
-					OWLOntologyManager om = OWLManager.createOWLOntologyManager(); 
-					OWLOntology currentOntology = om.loadOntology(IRI.create(LUBM_URL));
-					OWLOntologyMerger merger = null; 
-					
-					ClassAssertionsMetrics caMetrics = null; 
-					ObjectPropertyAssertionsMetrics opaMetrics = null;
-					DataPropertyAssertionsMetrics dpaMetrics = null;
-					
-					ClassAssertionsMetricsCalculator caCalculator = null;  
-					ObjectPropertyAssertionsMetricsCalculator opaCalculator = null; 
-					DataPropertyAssertionsMetricsCalculator dpaCalculator = null;
-					
-					OWLOntology mergedOntology = null; 
-					// we have to include all the universities up to i
-					for (int j=0; j<=i; j++) {
-						// first, we get all the university filenames we have to include 
-						// in the execution
-						File[] universityList = directory.listFiles(new UniversityFileFilter(j));
-						try {
-							for (File currentUniversityFile: universityList) {
-								System.out.println("--> Loading "+currentUniversityFile); 
-								om.loadOntologyFromOntologyDocument(currentUniversityFile);
-							}
-						}
-						catch(Exception e) {
-							wrongProcessedFiles.add(LUBM_URL.replace(".owl","")+"-"+i+".owl"); 
-						}
+				printHeader(outResults); 
+				
+				for (File currentOntologyFile: ontologyList) {
+					try {
+						om = OWLManager.createOWLOntologyManager(); 
+						currentOntology = om.loadOntologyFromOntologyDocument(currentOntologyFile);
+						outResults.print(currentOntologyFile.getName()+"\t"); 
+
+						caCalculator = new ClassAssertionsMetricsCalculator(currentOntology);
+						// first the local
+						caMetrics = caCalculator.calculateLocalMetrics(); 
+						outResults.print(caMetrics.toString());
+						// then the global
+						caMetrics = caCalculator.calculateGlobalMetrics(); 
+						outResults.print(caMetrics.toString());
+						
+						opaCalculator = new ObjectPropertyAssertionsMetricsCalculator(currentOntology); 
+						opaMetrics = opaCalculator.calculateLocalMetrics(); 
+						outResults.print(opaMetrics.toString());
+						opaMetrics = opaCalculator.calculateGlobalMetrics(); 
+						outResults.print(opaMetrics.toString()); 
+						
+						dpaCalculator = new DataPropertyAssertionsMetricsCalculator(currentOntology); 
+						dpaMetrics = dpaCalculator.calculateLocalMetrics(); 
+						outResults.print(dpaMetrics.toString());
+						dpaMetrics = dpaCalculator.calculateGlobalMetrics(); 
+						outResults.println(dpaMetrics.toString());
+						
+						outResults.flush(); 
 					}
-					// at this point om has all the ontologies parsed and read
-					merger = new OWLOntologyMerger(om); 
-					mergedOntology = merger.createMergedOntology(om, IRI.create(LUBM_URL.replace(".owl", "")+"-"+i+".owl"));
-					System.out.println(mergedOntology.getAxiomCount()+" axioms in the merged ontology"); 
-					outResults.print(LUBM_URL.replace(".owl","")+"-"+i+".owl\t"); 
-					
-					caCalculator = new ClassAssertionsMetricsCalculator(mergedOntology);
-					// first the local
-					caMetrics = caCalculator.calculateLocalMetrics(); 
-					outResults.print(caMetrics.toString());
-					// then the global
-					caMetrics = caCalculator.calculateGlobalMetrics(); 
-					outResults.print(caMetrics.toString());
-					
-					opaCalculator = new ObjectPropertyAssertionsMetricsCalculator(mergedOntology); 
-					opaMetrics = opaCalculator.calculateLocalMetrics(); 
-					outResults.print(opaMetrics.toString());
-					opaMetrics = opaCalculator.calculateGlobalMetrics(); 
-					outResults.print(opaMetrics.toString()); 
-					
-					dpaCalculator = new DataPropertyAssertionsMetricsCalculator(mergedOntology); 
-					dpaMetrics = dpaCalculator.calculateLocalMetrics(); 
-					outResults.print(dpaMetrics.toString());
-					dpaMetrics = dpaCalculator.calculateGlobalMetrics(); 
-					outResults.println(dpaMetrics.toString());
-					
-					outResults.flush(); 
-					
-					System.gc();																				
+					catch (Exception e) {
+						wrongProcessedFiles.add(currentOntologyFile); 
+					}
 				}
+				
 				File resultStats = new File(directory.toString()+File.separator+"resultStats.csv"); 
 				if (!wrongProcessedFiles.isEmpty()) {
 					try (PrintWriter out = new PrintWriter(resultStats)) {
 						out.println("There were "+wrongProcessedFiles.size()+" ontologies which were wrong processed"); 
-						for (String f: wrongProcessedFiles) {
+						for (File f: wrongProcessedFiles) {
 							out.println(f.toString()); 
 						}
 						out.flush();
@@ -116,7 +96,7 @@ public class LUBMSetBasedMetricsDirectoryCalculator {
 					catch (Exception e) {
 						e.printStackTrace(); 
 					}
-				}
+				}		
 			}
 			catch (Exception e) {
 				System.out.println("Problems with the metricsResults file"); 
@@ -147,16 +127,6 @@ public class LUBMSetBasedMetricsDirectoryCalculator {
 	public static class OWLFileFilter implements FileFilter {
 		public boolean accept(File pathname) {
 			return pathname.toString().endsWith(".owl"); 
-		}
-	}
-	
-	public static class UniversityFileFilter implements FileFilter {
-		int universityNumber = -1; 
-		public UniversityFileFilter(int number) {
-			this.universityNumber = number; 
-		}
-		public boolean accept(File pathname) {
-			return pathname.getName().startsWith("University"+universityNumber+"_");
 		}
 	}
 }

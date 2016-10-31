@@ -3,7 +3,7 @@
 // Author: Carlos Bobed
 // Date: August 2016
 // Version: 0.01
-// Comments: Class which calculates the set-based metrics about class assertions 
+// Comments: Class which calculates the metrics about class assertions 
 // Modifications: 
 ///////////////////////////////////////////////////////////////////////////////
 
