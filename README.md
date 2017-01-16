@@ -1,7 +1,7 @@
 # OWL2Predictions
 DIfferent tools to calculate features used to capture the complexity of the ABox of a given ontology to improve performance prediction. 
 
-It requires OWLAPI (versions 3.4.10 and 3.5.4 have been tested). In the IJSWIS version, TimeHarvester requires FactPlusPlus, TrOWL, and JFact libraries. 
+It requires OWLAPI (versions 3.4.10 and 3.5.4 have been tested). In this current version, TimeHarvester requires FactPlusPlus, TrOWL, and JFact libraries (IJSWIS submission's code requires also ELK which requires OWLAPI v4.0, the .jar files with the adapted code can be found at the paper page). 
 
 There are currently two versions (see Tags): 
 * JIST16: It corresponds to the work presented in JIST'16 paper: 
