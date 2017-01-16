@@ -8,7 +8,7 @@
 // Modifications: 
 ///////////////////////////////////////////////////////////////////////////////
 
-package sid.owl2predictions;
+package sid.owl2predictions.complexityMetrics.jist;
 
 public class DataPropertyAssertionsMetrics {
 

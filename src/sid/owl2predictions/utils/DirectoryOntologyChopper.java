@@ -36,7 +36,7 @@ public class DirectoryOntologyChopper {
 				try {
 					om = OWLManager.createOWLOntologyManager(); 
 					currentOntology = om.loadOntologyFromOntologyDocument(currentOntologyFile);
-					ontChopper = new OntologyChopper(currentOntology, 10, 5.0); 
+					ontChopper = new OntologyChopper(currentOntology, 1, 10.0); 
 					ontChopper.chopOntology(currentOntologyFile.toString());
 				}
 				catch (Exception e) {

@@ -12,7 +12,10 @@
 
 package sid.owl2predictions.harvester;
 
+import java.io.File;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -61,17 +64,15 @@ import org.semanticweb.owlapi.model.OWLTransitiveObjectPropertyAxiom;
 import org.semanticweb.owlapi.model.SWRLRule;
 
 public class OWLClassExpressionHarvester implements OWLAxiomVisitor {
-
+	
 	public ArrayList<OWLClassExpression> getHarvestedClasses() {
 		return harvestedClasses;
 	}
 
 	ArrayList<OWLClassExpression> harvestedClasses = null; 
-	HashSet<Integer> auxIDSet = null; 
 	
 	public OWLClassExpressionHarvester () {
 		this.harvestedClasses = new ArrayList<OWLClassExpression>();
-		this.auxIDSet = new HashSet<>(); 
 	}
 	
 	@Override
@@ -125,14 +126,13 @@ public class OWLClassExpressionHarvester implements OWLAxiomVisitor {
 	}
 
 	@Override
-	public void visit(OWLSubClassOfAxiom axiom) { 		
+	public void visit(OWLSubClassOfAxiom axiom) { 	
 		if (axiom.getSubClass().isAnonymous()) {
 			checkAndAdd(axiom.getSubClass()); 
 		}
 		if (axiom.getSuperClass().isAnonymous()) {
 			checkAndAdd(axiom.getSuperClass()); 
 		}
-
 	}
 
 	@Override
@@ -326,12 +326,15 @@ public class OWLClassExpressionHarvester implements OWLAxiomVisitor {
 	 * string comparison
 	 */
 	private void checkAndAdd (OWLClassExpression axiom) {
-		Integer auxID; 			
-		auxID = axiom.toString().hashCode(); 
-		if (!auxIDSet.contains(auxID)) {
-			harvestedClasses.add(axiom); 
-			auxIDSet.add(auxID); 
-		} 	
+	
+//		Integer auxID; 			
+//		auxID = axiom.toString().hashCode(); 
+//		if (!auxIDSet.contains(auxID)) {
+//			harvestedClasses.add(axiom); 
+//			auxIDSet.add(auxID); 
+//		} 	
+		
+		harvestedClasses.add(axiom); 
 	}
 
 }

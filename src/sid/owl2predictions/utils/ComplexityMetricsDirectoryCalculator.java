@@ -14,21 +14,21 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 
-import sid.owl2predictions.ClassAssertionsMetrics;
-import sid.owl2predictions.ClassAssertionsMetricsCalculator;
-import sid.owl2predictions.ClassComplexityAssertionsMetrics;
-import sid.owl2predictions.ClassComplexityAssertionsMetricsCalculator;
-import sid.owl2predictions.DataPropertyAssertionsMetrics;
-import sid.owl2predictions.DataPropertyAssertionsMetricsCalculator;
-import sid.owl2predictions.ObjectPropertyAssertionsMetrics;
-import sid.owl2predictions.ObjectPropertyAssertionsMetricsCalculator;
+import sid.owl2predictions.complexityMetrics.ClassComplexityAssertionsMetrics;
+import sid.owl2predictions.complexityMetrics.DataPropertyComplexityAssertionsMetrics;
+import sid.owl2predictions.complexityMetrics.ObjectPropertyComplexityAssertionsMetrics;
+import sid.owl2predictions.complexityMetrics.ELProfile.AssertionsComplexityMetricsCalculatorEL;
 
-public class ClassComplexityMetricsDirectoryCalculator {
+
+public class ComplexityMetricsDirectoryCalculator {
 
 	public static void main(String[] args) {
 		File directory = new File(args[0]);
@@ -36,15 +36,11 @@ public class ClassComplexityMetricsDirectoryCalculator {
 			// we assume that every single file ending in .owl that is in the directory is an ontology 
 			// to be chopped 
 			File[] ontologyList = directory.listFiles(new OWLFileFilter());
-			OWLOntologyManager om = null;
-			OWLOntology currentOntology = null; 			
-			ArrayList<File> wrongProcessedFiles = new ArrayList<>();
-			
-			ClassComplexityAssertionsMetrics complexityMetrics = null; 
-			ClassComplexityAssertionsMetricsCalculator compCalculator = null; 
-			
+			OWLOntologyManager om = null;		
+			OWLOntology currentOntology = null; 
 			File metricResults = new File(directory.toString()+File.separator+args[1]); 
-			
+			AssertionsComplexityMetricsCalculatorEL compCalculator = null; 
+			ArrayList<File> wrongProcessedFiles = new ArrayList<>(); 
 			try (PrintWriter outResults = new PrintWriter(metricResults)) {
 				printHeader(outResults); 
 				int counter=0; 
@@ -57,23 +53,27 @@ public class ClassComplexityMetricsDirectoryCalculator {
 						om = OWLManager.createOWLOntologyManager(); 
 						currentOntology = om.loadOntologyFromOntologyDocument(currentOntologyFile);
 						outResults.print(currentOntologyFile.getName()+"\t"); 
-
-						compCalculator = new ClassComplexityAssertionsMetricsCalculator(currentOntology);
-						complexityMetrics = compCalculator.calculateClassComplexityMetrics(); 
-						outResults.println(complexityMetrics.toString());
+						
+						compCalculator = new AssertionsComplexityMetricsCalculatorEL(currentOntology);
+						compCalculator.calculateAllMetrics();
+						outResults.println(compCalculator.getClassComplexities().toString()+
+								compCalculator.getClassComplexitiesWitoughGCIs().toString()+
+								compCalculator.getObjectPropComplexities().toString()+
+								compCalculator.getDataPropComplexities().toString());
 							
 						outResults.flush(); 
 					}
 					catch (Exception e) {
+						e.printStackTrace();
 						wrongProcessedFiles.add(currentOntologyFile); 
 					}
 				}
 				
-				File resultStats = new File(directory.toString()+File.separator+"resultStats.csv"); 
-				if (!wrongProcessedFiles.isEmpty()) {
+				File resultStats = new File(directory.toString()+File.separator+"errorResultStats.csv"); 
+				if (!MetricsRunnable.wrongProcessedOntologies.isEmpty()) {
 					try (PrintWriter out = new PrintWriter(resultStats)) {
-						out.println("There were "+wrongProcessedFiles.size()+" ontologies which were wrong processed"); 
-						for (File f: wrongProcessedFiles) {
+						out.println("There were "+MetricsRunnable.wrongProcessedOntologies.size()+" ontologies which were wrong processed"); 
+						for (String f: MetricsRunnable.wrongProcessedOntologies) {
 							out.println(f.toString()); 
 						}
 						out.flush();
@@ -92,9 +92,12 @@ public class ClassComplexityMetricsDirectoryCalculator {
 			System.out.println("Not a directory ... leaving"); 
 		}
 	}
-	
+
 	public static void printHeader (PrintWriter out) {
-		out.println("Ontology\t"+ClassComplexityAssertionsMetrics.headers()); 
+		ClassComplexityAssertionsMetrics aux = new ClassComplexityAssertionsMetrics();  
+		out.println("Ontology\t"+aux.headers()+"\t"+aux.headersWO()+"\t"+
+					(new ObjectPropertyComplexityAssertionsMetrics()).headers()+"\t"+
+					(new DataPropertyComplexityAssertionsMetrics()).headers()); 
 	}
 	
 	public static class OWLFileFilter implements FileFilter {

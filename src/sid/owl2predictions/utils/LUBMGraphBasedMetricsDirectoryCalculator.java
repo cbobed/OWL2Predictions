@@ -19,14 +19,14 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 
-import sid.owl2predictions.ClassAssertionsMetrics;
-import sid.owl2predictions.ClassAssertionsMetricsCalculator;
-import sid.owl2predictions.DataPropertyAssertionsMetrics;
-import sid.owl2predictions.DataPropertyAssertionsMetricsCalculator;
-import sid.owl2predictions.ObjectPropertyAssertionsMetrics;
-import sid.owl2predictions.ObjectPropertyAssertionsMetricsCalculator;
 import sid.owl2predictions.SubGraphMetrics;
 import sid.owl2predictions.SubGraphMetricsCalculator;
+import sid.owl2predictions.complexityMetrics.jist.ClassAssertionsMetrics;
+import sid.owl2predictions.complexityMetrics.jist.ClassAssertionsMetricsCalculator;
+import sid.owl2predictions.complexityMetrics.jist.DataPropertyAssertionsMetrics;
+import sid.owl2predictions.complexityMetrics.jist.DataPropertyAssertionsMetricsCalculator;
+import sid.owl2predictions.complexityMetrics.jist.ObjectPropertyAssertionsMetrics;
+import sid.owl2predictions.complexityMetrics.jist.ObjectPropertyAssertionsMetricsCalculator;
 
 public class LUBMGraphBasedMetricsDirectoryCalculator {
 

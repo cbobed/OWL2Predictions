@@ -23,12 +23,19 @@ public class StatisticsHarvester {
 		OWLOntologyManager om = OWLManager.createOWLOntologyManager();
 		OWLOntology ont = null; 
 		PrintWriter out = new PrintWriter(outFile);
-		out.println("ontFilename;#Axioms;#TBoxAxioms;#ABoxAxioms;Ratio"); 
+		out.println("ontFilename;#Axioms;#LogicalAxioms;#TBoxAxioms;#ABoxAxioms;Ratio");
+		double TBoxAxioms = 0; 
 		for (File ontFile: ontologyFiles) {
 			om = OWLManager.createOWLOntologyManager(); 
 			ont = om.loadOntologyFromOntologyDocument(ontFile); 
-			out.println(ontFile.toString()+";"+ont.getAxiomCount()+";"+ont.getTBoxAxioms(true).size()+";"
-					+ont.getABoxAxioms(true).size()+";"+((double)ont.getABoxAxioms(true).size()/ont.getTBoxAxioms(true).size())); 			
+			
+			TBoxAxioms = ont.getTBoxAxioms(true).size(); 
+			
+			out.println(ontFile.toString()+";"+ont.getAxiomCount()+";"+
+					ont.getLogicalAxiomCount()+";"+
+					TBoxAxioms+";"
+					+ont.getABoxAxioms(true).size()+";"+
+					((double)ont.getABoxAxioms(true).size()/TBoxAxioms)); 			
 		}
 		out.flush(); 
 		out.close(); 

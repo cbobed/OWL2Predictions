@@ -50,17 +50,26 @@ public class OntologyChopper {
 		this.ont = ont; 
 		// [0..infinite] with 1.0 == 100%
 		this.desiredRatio = desiredRatio; 
-		this.bucketSize = (long) Math.floor(( ont.getABoxAxioms(true).size() - (this.desiredRatio * ont.getTBoxAxioms(true).size()) ) / initialChopNumber); 
+		
+		this.bucketSize = (long) Math.floor(( ont.getABoxAxioms(true).size() - (this.desiredRatio * ont.getTBoxAxioms(true).size() ) ) / initialChopNumber);
+		
+		if (this.bucketSize == 0) {
+			// This will assure that ontologies which are really close to the desired ratio
+			// are not chopped at all
+			this.bucketSize = (long)initialChopNumber; 
+		}
 	}
 	
 	public void chopOntology (String outFilename) {
 		OWLOntologyManager om = ont.getOWLOntologyManager();
 		
+		// we now include also the RBox axioms
 		double TBoxAxiomsCount = ont.getTBoxAxioms(true).size(); 
 		double ABoxAxiomsCount = ont.getABoxAxioms(true).size();
 		
 		Set<OWLAxiom> currentABoxSet = null; 
 		int step = 1; 
+		int maximumStep = 1; 
 		double minimumABoxAxiomCount = -1;
 		long currentStepSize = -1; 
 		long currentCount = -1; 
@@ -81,7 +90,11 @@ public class OntologyChopper {
 			// traversals
 			currentStepSize = bucketSize;
 			
-			while (minimumABoxAxiomCount < (ABoxAxiomsCount - currentStepSize) ) {
+			// we have added a new condition to adjust the number of times 
+			// we can iterate over the same ontology 
+			// currently is set to 2, which gives us a theoretic limit of (initialChopNumber*1.5) chops 
+			while ( (minimumABoxAxiomCount < (ABoxAxiomsCount - currentStepSize)) &&   
+					(step <= maximumStep) ) {
 				// we have to chop the ontology in several chunks
 				// the current chunkSize to be removed
 				currentStepSize = step*bucketSize; 
