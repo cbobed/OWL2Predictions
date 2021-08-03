@@ -12,6 +12,8 @@ package sid.owl2predictions.utils;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.stream.Stream;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -19,24 +21,41 @@ import org.semanticweb.owlapi.model.OWLOntologyManager;
 
 public class StatisticsHarvester {
 	
+	
+	public static synchronized void writeMessage (PrintWriter out, String str) {
+		out.println(str); 
+		out.flush(); 
+	}
+	
 	public static void collectStatistics (File[] ontologyFiles, File outFile) throws Exception {
-		OWLOntologyManager om = OWLManager.createOWLOntologyManager();
-		OWLOntology ont = null; 
 		PrintWriter out = new PrintWriter(outFile);
 		out.println("ontFilename;#Axioms;#LogicalAxioms;#TBoxAxioms;#ABoxAxioms;Ratio");
-		double TBoxAxioms = 0; 
-		for (File ontFile: ontologyFiles) {
-			om = OWLManager.createOWLOntologyManager(); 
-			ont = om.loadOntologyFromOntologyDocument(ontFile); 
-			
-			TBoxAxioms = ont.getTBoxAxioms(true).size(); 
-			
-			out.println(ontFile.toString()+";"+ont.getAxiomCount()+";"+
-					ont.getLogicalAxiomCount()+";"+
-					TBoxAxioms+";"
-					+ont.getABoxAxioms(true).size()+";"+
-					((double)ont.getABoxAxioms(true).size()/TBoxAxioms)); 			
-		}
+		out.flush(); 
+
+		Stream<File> ontFiles = Arrays.stream(ontologyFiles);
+		
+		ontFiles.parallel().forEach( ontFile -> {
+			System.out.println("Processing "+ontFile+"...");
+			OWLOntologyManager om = OWLManager.createOWLOntologyManager();
+			OWLOntology ont = null; 
+			try {
+				om = OWLManager.createOWLOntologyManager(); 
+				ont = om.loadOntologyFromOntologyDocument(ontFile);
+				double TBoxAxioms = 0; 
+				double ABoxAxioms = 0;
+				TBoxAxioms = ont.getTBoxAxioms(true).size(); 
+				ABoxAxioms = ont.getABoxAxioms(true).size(); 
+				writeMessage(out, ontFile.toString()+";"+ont.getAxiomCount()+";"+
+						ont.getLogicalAxiomCount()+";"+
+						TBoxAxioms+";"
+						+ABoxAxioms+";"+
+						(ABoxAxioms/TBoxAxioms));
+			}
+			catch (Exception e) {
+				e.printStackTrace(); 
+			}
+		});
+		
 		out.flush(); 
 		out.close(); 
 	}
