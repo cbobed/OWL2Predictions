@@ -99,7 +99,13 @@ public class ComplexityMetricsDirectoryCalculatorMultithreaded {
 	
 	public static class OWLFileFilter implements FileFilter {
 		public boolean accept(File pathname) {
-			return pathname.toString().endsWith(".owl"); 
+			return pathname.toString().endsWith(".owl") || 
+					pathname.toString().endsWith(".obo") ||
+					pathname.toString().endsWith(".txt") ||
+					pathname.toString().endsWith(".xml") ||
+					pathname.toString().endsWith(".rdf") ||
+					pathname.toString().endsWith(".owl.xml");
+					
 		}
 	}
 }
